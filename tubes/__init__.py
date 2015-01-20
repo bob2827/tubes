@@ -27,7 +27,7 @@ def fieldTypeToSqla(ft, name):
     elif ft == 'real':
         return sqla.Column(name, sqla.Float)
     elif ft == 'str':
-        return sqla.Column(name, sqla.String)
+        return sqla.Column(name, sqla.Text)
     elif ft == 'time':
         return sqla.Column(name, sqla.DateTime)
     elif ft == 'blob':
