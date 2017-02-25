@@ -35,6 +35,24 @@ def fieldTypeToSqla(ft, name):
     else:
         return None
 
+def sqlaToFieldType(sqla_type):
+    if isinstance(sqla_type, sqla.types.INTEGER) or \
+       isinstance(sqla_type, sqla.types.INT):
+        return 'int'
+    elif isinstance(sqla_type, sqla.types.FLOAT):
+        return 'real'
+    elif isinstance(sqla_type, sqla.types.TEXT) or\
+         isinstance(sqla_type, sqla.types.String):
+        return 'str'
+    elif isinstance(sqla_type, sqla.types.DATE) or\
+         isinstance(sqla_type, sqla.types.DATETIME):
+        return 'time'
+    elif isinstance(sqla_type, sqla.types.BLOB):
+        return 'blob'
+    else:
+        return None
+
+#isinstance(sqla_type, sqla.types.STRINGTYPE) or\
 """
  * data is in 'list-of-lists' format which each minor list as a record and each
    element therof corresponding with the element sharing its position in the
@@ -48,6 +66,10 @@ class tubesData(object):
     def __init__(self, schema, schema_format="signature", data=None):
         self.interpretSchema(schema, schema_format)
         self.data=data
+
+    def cleanNames(self):
+        for i, name in enumerate(self.names):
+            
 
     def interpretSchema(self, schema, schema_format):
         if schema_format == "signature":
@@ -74,6 +96,18 @@ class tubesData(object):
 
     def dumps(self):
         return json.dumps(self.dumpd())
+
+    # con - sqla connection object
+    # meta - sqla metadata object
+    def dumpSqla(self, con, meta, tblname):
+        tbl = sqlaTable(meta, tblname)
+        con.execute(tbl.insert(), self.recordlist())
+
+    # mongo_db - the mongo database object
+    # colname - the collection name (string)
+    def dumpMongo(self, mongo_db, colname):
+        for r in self.records():
+            mongo_db[colname].insert(r)
 
     def sqlaTable(self, sqlaMetadata, tableName):
         members = [sqla.Column('id', sqla.Integer, primary_key=True)]
@@ -109,6 +143,17 @@ class tubesDicts(tubesData):
                 e.append(d[n])
             l.append(e)
         self.data = l
+
+class sqlaTube(tubesData):
+    def __init__(self, sqla_table, con):
+        self.names = []
+        self.types = []
+        self.data = []
+        for col in sqla_table.columns:
+            self.names.append(col.name)
+            self.types.append(sqlaToFieldType(col.type))
+        for row in  con.execute(sqla_table.select()):
+            self.data.append(list(row))
 
 class tubesDirect(tubesData):
     def __init__(self, names, types, data):

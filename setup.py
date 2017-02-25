@@ -12,6 +12,6 @@ setup(name='tubes',
       package_data={'tubes': ['*'],
                    },
       scripts = [],
-      install_requires=['SQLAlchemy'],
+      install_requires=['SQLAlchemy', 'pymongo'],
       zip_safe=True,
      )
